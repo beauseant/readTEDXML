@@ -21,11 +21,15 @@ def openTarFile ( filename ):
 
 class TranslateMachine:
 
-	__keysToSaveMain = ['@DOC_ID']
-	__keysTranslateMain = {'@DOC_ID':'doc_id'}
+	__keysToSaveMain = ['@DOC_ID','LINKS_SECTION']
+	__keysTranslateMain = {'@DOC_ID':'DOC_ID','LINKS_SECTION':'LINKS'}
 
-	__keysToSaveMainTechnicalSection = ['RECEPTION_ID']
-	__keysTranslateTechnicalSection = {'RECEPTION_ID':'reception_id'}
+	__keysToSaveMainTechnicalSection = ['RECEPTION_ID','DELETION_DATE']
+	__keysTranslateTechnicalSection = {'RECEPTION_ID':'RECEPTION_ID', 'DELETION_DATE':'DELETION_DATE'}
+
+
+	__keysToSaveNoticeData = ['NO_DOC_OJS','URI_LIST','LG_ORIG','ORIGINAL_CPV']
+	__keysTranslateNoticeData = {'NO_DOC_OJS':'NO_DOC_OJS','URI_LIST':'URI_LIST','LG_ORIG':'LG_ORIG','ORIGINAL_CPV':'ORIGINAL_CPV'}
 
 
 	def translateMainSection ( self, data ):
@@ -35,9 +39,12 @@ class TranslateMachine:
 	    #si queremos un diccionarion con otro diccionario para cada sección:
 	    #data['TECHNICAL_SECTION'] = {keysTranslateTechnicalSection[key]: tedDoc['TED_EXPORT']['TECHNICAL_SECTION'][key] for key in keysTranslateTechnicalSection }
 	    #si queremos un sólo nivel:
-		return {self.__keysTranslateTechnicalSection[key]: data[key] for key in self.__keysTranslateTechnicalSection }    
+		return {self.__keysTranslateTechnicalSection[key]: data[key] for key in self.__keysToSaveMainTechnicalSection }    
 
 
+
+	def  translateNoticeData (self, data):
+		return {self.__keysTranslateNoticeData[key]: data[key] for key in self.__keysToSaveNoticeData }    
 
 	def __getLote (self, lote):
 
@@ -95,51 +102,68 @@ class TranslateMachine:
 
 		formData = {}
 		formData['EN_TRANSLATION'] = False
+		formData['DATE_DISPATCH_NOTICE']=[]
+		formData['CONTRACTING_BODY'] = []
+
 
 		#si es una lista de valores es que se trata de una traduccion, un idioma en cada uno. Buscamos el original y 
 		#la traducción al ingles si existe, tambien guardamos el original :
 
-		if type (data) == list:
+
+		if type (data) == list:			
 			for value in data:
+				formData['DATE_DISPATCH_NOTICE'].append(value['COMPLEMENTARY_INFO'].get ('DATE_DISPATCH_NOTICE','NONE'))
+				formData['CONTRACTING_BODY'].append (value['CONTRACTING_BODY']['ADDRESS_CONTRACTING_BODY'])
 				if value['@LG'] == 'EN' and value['@CATEGORY'] == 'TRANSLATION':
 					formData['EN_TRANSLATION'] = True
 					formData['LOT_TRANSLATION'] = self.procesarLote ( value['OBJECT_CONTRACT'] )
 
 				if  value['@CATEGORY'] == 'ORIGINAL':
 					formData['ORIGINAL_LG'] = value['@LG']
-					formData['LOT_ORIGINAL'] = self.procesarLote ( value['OBJECT_CONTRACT'] )					
+					formData['LOT_ORIGINAL'] = self.procesarLote ( value['OBJECT_CONTRACT'] )				
 
 
 		#solo tiene un idioma:
 		else:
 			formData['ORIGINAL_LG'] = data['@LG']
 			formData['LOT_ORIGINAL'] = self.procesarLote ( data['OBJECT_CONTRACT'] )
+			formData['DATE_DISPATCH_NOTICE'].append(data['COMPLEMENTARY_INFO'].get ('DATE_DISPATCH_NOTICE','NONE'))
+			formData['CONTRACTING_BODY'].append (data['CONTRACTING_BODY']['ADDRESS_CONTRACTING_BODY'])
+
 
 		formData['LOT_NUMBER'] = len (formData['LOT_ORIGINAL'])
-
 
 
 		return formData
 
 	def translateKeys ( self, tedDoc ):
 
-	    data = {}
-	    
-	    formdata = {}
-	    formdata['FORM_ID'] = list (tedDoc['TED_EXPORT']['FORM_SECTION'].keys())[0]
-	        
+		data = {}
 
-	    data = self.translateMainSection ( tedDoc['TED_EXPORT'] )	    
-
-	    techData = self.translateTechnicalSection (tedDoc['TED_EXPORT']['TECHNICAL_SECTION'])
-	    data.update ( techData )
-
-	    data.update ( formdata )
-
-	    formdata2 = self.translateFormSection ( tedDoc['TED_EXPORT']['FORM_SECTION'][formdata['FORM_ID']] ) 
-
-	    data.update ( formdata2 )
+		formdata = {}
 
 
-	    return data
+
+		formdata['FORM_ID'] = list (tedDoc['TED_EXPORT']['FORM_SECTION'].keys())[0]
+		    
+
+		data = self.translateMainSection ( tedDoc['TED_EXPORT'] )	    
+
+		techData = self.translateTechnicalSection (tedDoc['TED_EXPORT']['TECHNICAL_SECTION'])
+		data.update ( techData )
+
+		notData = self.translateNoticeData (tedDoc['TED_EXPORT']['CODED_DATA_SECTION']['NOTICE_DATA'])
+
+		data.update (notData)
+
+		data.update ( formdata )
+
+		formdata2 = self.translateFormSection ( tedDoc['TED_EXPORT']['FORM_SECTION'][formdata['FORM_ID']] ) 
+
+		data.update ( formdata2 )
+
+
+
+
+		return data
 
