@@ -9,9 +9,9 @@ from utils import TranslateMachine
 if __name__ == "__main__":
 
     #file ='///export/data_ml4ds/IntelComp/Datasets/ted/pruebas/test.tgz'
-    file = '/home/sblanco/Downloads/readTED/2021-03.tar.gz'
+    file = '/home/sblanco/Downloads/readTED/2022-03.tar.gz'
     #file = './datosprueba/test.tgz'
-    file = '/export/data_ml4ds/IntelComp/Datasets/ted/pruebas/test.tgz'
+    #file = '/export/data_ml4ds/IntelComp/Datasets/ted/pruebas/test.tgz'
     #file = '/export/data_ml4ds/IntelComp/Datasets/ted/xmls/2022-01.tar.gz'
     totalResult = []
 

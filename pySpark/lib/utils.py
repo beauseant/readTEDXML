@@ -70,57 +70,57 @@ class TranslateMachine:
         return notData 
 
 
-    def __getLote (self, lote):
+    def __getPart (self, part):
 
-        if 'TITLE' in lote:
-            title = str(lote['TITLE']['P'])
+        if 'TITLE' in part:
+            title = str(part['TITLE']['P'])
         else:
             title = 'NONE'
 
-        if 'VAL_ESTIMATED_TOTAL' in lote:
-            val_est = lote['VAL_ESTIMATED_TOTAL']['#text']
+        if 'VAL_ESTIMATED_TOTAL' in part:
+            val_est = part['VAL_ESTIMATED_TOTAL']['#text']
         else:
             val_est = 'NONE'
 
-        if 'SHORT_DESCR' in lote:
-            short_d = json.dumps (lote['SHORT_DESCR']['P'])
+        if 'SHORT_DESCR' in part:
+            short_d = json.loads (json.dumps (part['SHORT_DESCR']['P']))
             if type (short_d) == list:
                 short_d = short_d[0]
         else:
             short_d = 'NONE'
 
-        if 'TYPE_CONTRACT' in lote:
-            type_cont = json.dumps (lote['TYPE_CONTRACT']['@CTYPE'])
+        if 'TYPE_CONTRACT' in part:
+            type_cont = json.loads (json.dumps (part['TYPE_CONTRACT']['@CTYPE']))
         else:
             type_cont = 'NONE'
 
-        if 'OBJECT_DESCR' in lote:
-            obj_desc = json.dumps (lote['OBJECT_DESCR'])
+        if 'OBJECT_DESCR' in part:
+            obj_desc = json.loads((json.dumps (part['OBJECT_DESCR'])))
         else:
             obj_desc = 'NONE'
 
         try:
-            valor = {'TITLE': title,'REFERENCE_NUMBER':lote.get('REFERENCE_NUMBER','NONE'),\
-                         'CPV_MAIN':str(lote['CPV_MAIN']['CPV_CODE']['@CODE']),'TYPE_CONTRACT':type_cont,\
+            valor = {'TITLE': title,'REFERENCE_NUMBER':part.get('REFERENCE_NUMBER','NONE'),\
+                         'CPV_MAIN':str(part['CPV_MAIN']['CPV_CODE']['@CODE']),'TYPE_CONTRACT':type_cont,\
                           'SHORT_DESCR':short_d, 'VAL_ESTIMATED_TOTAL':val_est,\
-                           'LOT_DIVISION':lote.get('LOT_DIVISION','NONE'),'OBJECT_DESCR':obj_desc,'DATE_PUBLICATION_NOTICE':lote.get('DATE_PUBLICATION_NOTICE','NONE')
+                           'LOT_DIVISION':part.get('LOT_DIVISION','NONE'),'OBJECT_DESCR':obj_desc,'DATE_PUBLICATION_NOTICE':part.get('DATE_PUBLICATION_NOTICE','NONE')
                     }
         except Exception as E:
             print (E)
             import ipdb ; ipdb.set_trace()
         return valor
 
-    def procesarLote (self, data ):
+    def procesarPart (self, data ):
 
-        lotes = []
+        parts = []
 
         if type(data) == list:
             for d in data:
-                lotes.append (self.__getLote (d))
+                parts.append (self.__getPart (d))
         else:           
-            lotes.append (self.__getLote (data))
+            parts.append (self.__getPart (data))
 
-        return lotes
+        return parts
 
 
 
@@ -144,22 +144,22 @@ class TranslateMachine:
                 formData['CONTRACTING_BODY'].append (value['CONTRACTING_BODY']['ADDRESS_CONTRACTING_BODY'])
                 if value['@LG'] == 'EN' and value['@CATEGORY'] == 'TRANSLATION':
                     formData['EN_TRANSLATION'] = True
-                    formData['LOT_TRANSLATION'] = self.procesarLote ( value['OBJECT_CONTRACT'] )
+                    formData['LOT_TRANSLATION'] = self.procesarPart ( value['OBJECT_CONTRACT'] )
 
                 if  value['@CATEGORY'] == 'ORIGINAL':
                     formData['ORIGINAL_LG'] = value['@LG']
-                    formData['LOT_ORIGINAL'] = self.procesarLote ( value['OBJECT_CONTRACT'] )               
+                    formData['PART_ORIGINAL'] = self.procesarPart ( value['OBJECT_CONTRACT'] )               
 
 
         #solo tiene un idioma:
         else:
             formData['ORIGINAL_LG'] = data['@LG']
-            formData['LOT_ORIGINAL'] = self.procesarLote ( data['OBJECT_CONTRACT'] )
+            formData['PART_ORIGINAL'] = self.procesarPart ( data['OBJECT_CONTRACT'] )
             formData['DATE_DISPATCH_NOTICE'].append(data['COMPLEMENTARY_INFO'].get ('DATE_DISPATCH_NOTICE','NONE'))
             formData['CONTRACTING_BODY'].append (data['CONTRACTING_BODY']['ADDRESS_CONTRACTING_BODY'])
 
 
-        formData['LOT_NUMBER'] = len (formData['LOT_ORIGINAL'])
+        formData['PART_NUMBER'] = len (formData['PART_ORIGINAL'])
 
 
         return formData
